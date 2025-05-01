@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
 function CarSearch() {
@@ -12,11 +12,9 @@ function CarSearch() {
   const handleSearch = async () => {
     if (!registration) return;
 
-    // Fetch all cars from the database
     const q = query(collection(db, "cars"));
     const querySnapshot = await getDocs(q);
 
-    // Loop through all cars and find the one with case-insensitive match
     let foundCar = null;
     querySnapshot.forEach((doc) => {
       const carData = doc.data();
@@ -45,8 +43,6 @@ function CarSearch() {
         onChange={(e) => setregistration(e.target.value)}
       />
       <button onClick={handleSearch}>Search</button>
-
-      {/* Move Login button here below the search button */}
       <button onClick={() => navigate("/login")}>Login</button>
 
       {notFound && <p>No car found.</p>}
@@ -61,6 +57,8 @@ function CarSearch() {
             <p>Year: {car.year}</p>
             <p>Price: ₹{car.price}</p>
             <p>Registration No: {car.registration}</p>
+            <p>Ownership: {car.ownership || 'N/A'}</p>
+            <p>Kilometers Run: {car.kms || 'N/A'} km</p>
           </div>
         </div>
       )}
