@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { db } from '../firebase';
 import {
   collection,
@@ -27,6 +27,8 @@ export default function AdminDashboard() {
   });
 
   const [cars, setCars] = useState([]);
+  const [editingCarId, setEditingCarId] = useState(null);
+  const imageInputRef = useRef(null);
   const nav = useNavigate();
 
   const handleChange = async (e) => {
@@ -65,10 +67,15 @@ export default function AdminDashboard() {
     }
   };
 
+  const clearForm = () => {
+    setForm({ name: '', year: '', price: '', registration: '', image: '', ownership: '', kms: '' });
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
   const submit = async () => {
     await addDoc(collection(db, 'cars'), form);
     alert('Car added!');
-    setForm({ name: '', year: '', price: '', registration: '', image: '', ownership: '', kms: '' });
+    clearForm();
     loadCars();
   };
 
@@ -78,8 +85,7 @@ export default function AdminDashboard() {
   };
 
   const handleDelete = async (id) => {
-    const carDoc = doc(db, 'cars', id);
-    await deleteDoc(carDoc);
+    await deleteDoc(doc(db, 'cars', id));
     loadCars();
   };
 
@@ -93,14 +99,16 @@ export default function AdminDashboard() {
       ownership: car.ownership || '',
       kms: car.kms || '',
     });
+    setEditingCarId(car.id);
   };
 
-  const handleUpdate = async (id) => {
-    const carDoc = doc(db, 'cars', id);
+  const handleUpdate = async () => {
+    const carDoc = doc(db, 'cars', editingCarId);
     await updateDoc(carDoc, form);
     alert('Car updated!');
+    setEditingCarId(null);
+    clearForm();
     loadCars();
-    setForm({ name: '', year: '', price: '', registration: '', image: '', ownership: '', kms: '' });
   };
 
   const handleDownload = async () => {
@@ -141,6 +149,7 @@ export default function AdminDashboard() {
         <button onClick={logout}>Logout</button>
       </div>
 
+      {/* Add Car form stays visible while editing */}
       <h2>Add Car</h2>
       <input type="text" name="name" placeholder="Car Name" value={form.name} onChange={handleChange} />
       <input type="text" name="year" placeholder="Year" value={form.year} onChange={handleChange} />
@@ -148,7 +157,7 @@ export default function AdminDashboard() {
       <input type="text" name="registration" placeholder="Registration Number" value={form.registration} onChange={handleChange} />
       <input type="text" name="ownership" placeholder="Number of Ownership" value={form.ownership} onChange={handleChange} />
       <input type="text" name="kms" placeholder="Kilometers Run" value={form.kms} onChange={handleChange} />
-      <input type="file" name="image" accept="image/*" onChange={handleChange} />
+      <input type="file" name="image" accept="image/*" onChange={handleChange} ref={imageInputRef} />
       <button onClick={submit}>Submit</button>
 
       <h2 style={{ marginTop: '40px' }}>All Cars</h2>
@@ -157,16 +166,35 @@ export default function AdminDashboard() {
       <div className="grid">
         {cars.map((car) => (
           <div key={car.id} className="card">
-            <img src={car.image} alt={car.name} />
-            <h3>{car.name}</h3>
-            <p>Year: {car.year}</p>
-            <p>Price: ₹{car.price}</p>
-            <p>Registration: {car.registration}</p>
-            <p>Ownership: {car.ownership}</p>
-            <p>Kilometers Run: {car.kms}</p>
-            <button onClick={() => handleEdit(car)}>Edit</button>
-            <button onClick={() => handleDelete(car.id)}>Delete</button>
-            {form.name === car.name && <button onClick={() => handleUpdate(car.id)}>Update</button>}
+            {editingCarId === car.id ? (
+              // Show the form for editing the car details
+              <>
+                <input type="text" name="name" placeholder="Car Name" value={form.name} onChange={handleChange} />
+                <input type="text" name="year" placeholder="Year" value={form.year} onChange={handleChange} />
+                <input type="text" name="price" placeholder="Price" value={form.price} onChange={handleChange} />
+                <input type="text" name="registration" placeholder="Registration Number" value={form.registration} onChange={handleChange} />
+                <input type="text" name="ownership" placeholder="Number of Ownership" value={form.ownership} onChange={handleChange} />
+                <input type="text" name="kms" placeholder="Kilometers Run" value={form.kms} onChange={handleChange} />
+                <input type="file" name="image" accept="image/*" onChange={handleChange} ref={imageInputRef} />
+                <div>
+                  <button onClick={handleUpdate}>Update</button>
+                  <button onClick={() => { setEditingCarId(null); clearForm(); }}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              // Show the car details preview
+              <>
+                <img src={car.image} alt={car.name} />
+                <h3>{car.name}</h3>
+                <p>Year: {car.year}</p>
+                <p>Price: ₹{car.price}</p>
+                <p>Registration: {car.registration}</p>
+                <p>Ownership: {car.ownership}</p>
+                <p>Kilometers Run: {car.kms}</p>
+                <button onClick={() => handleEdit(car)}>Edit</button>
+                <button onClick={() => handleDelete(car.id)}>Delete</button>
+              </>
+            )}
           </div>
         ))}
       </div>
