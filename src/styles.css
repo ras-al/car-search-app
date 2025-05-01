@@ -250,3 +250,7 @@ button:hover {
     margin-bottom: 10px; /* Add spacing between buttons */
   }
 }
+.logo {
+  width: 120px;
+  margin-bottom: 10px;
+}

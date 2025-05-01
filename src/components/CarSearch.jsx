@@ -34,6 +34,7 @@ function CarSearch() {
 
   return (
     <div className="container">
+      <img src="/logo.png" alt="Logo" className="logo" />
       <h1>ABC Cars</h1>
       <h2>Search Car</h2>
       <input

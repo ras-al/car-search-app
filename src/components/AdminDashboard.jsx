@@ -102,6 +102,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="container">
+      <img src="/logo.png" alt="Logo" className="logo" />
       <div className="header-buttons">
         <button onClick={() => nav('/')}>← Back to Search</button>
         <button onClick={logout}>Logout</button>
