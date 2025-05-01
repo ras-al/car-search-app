@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
+import imageCompression from 'browser-image-compression';
 
 export default function AdminDashboard() {
   const [form, setForm] = useState({
@@ -15,18 +23,43 @@ export default function AdminDashboard() {
     registration: '',
     image: '',
     ownership: '',
-    kms: ''
+    kms: '',
   });
 
   const [cars, setCars] = useState([]);
   const nav = useNavigate();
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value, files } = e.target;
+
     if (name === 'image') {
-      const reader = new FileReader();
-      reader.onloadend = () => setForm((f) => ({ ...f, image: reader.result }));
-      reader.readAsDataURL(files[0]);
+      const file = files[0];
+      if (!file) return;
+
+      const options = {
+        maxSizeMB: 0.9,
+        maxWidthOrHeight: 1024,
+        useWebWorker: true,
+      };
+
+      try {
+        const compressedFile = await imageCompression(file, options);
+        const reader = new FileReader();
+
+        reader.onloadend = () => {
+          const base64String = reader.result;
+          if (base64String.length > 1048487) {
+            alert('Image is still too large after compression. Please use a smaller image.');
+          } else {
+            setForm((f) => ({ ...f, image: base64String }));
+          }
+        };
+
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error('Image compression error:', error);
+        alert('Failed to compress image.');
+      }
     } else {
       setForm((f) => ({ ...f, [name]: value }));
     }
@@ -58,7 +91,7 @@ export default function AdminDashboard() {
       registration: car.registration,
       image: car.image,
       ownership: car.ownership || '',
-      kms: car.kms || ''
+      kms: car.kms || '',
     });
   };
 
